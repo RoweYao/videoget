@@ -1,0 +1,44 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+
+      - name: Build single-file Windows application
+        shell: cmd
+        env:
+          PY_PYTHON3: '3.12'
+        run: call build_windows.bat --no-pause
+
+      - name: Run unit tests (when present)
+        shell: cmd
+        run: |
+          if exist tests (
+            .venv\Scripts\python.exe -m unittest discover -s tests -v
+          ) else (
+            echo No tests directory; skipping.
+          )
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoGet-Windows-x64
+          path: dist/VideoGet.exe
+          if-no-files-found: error
+          retention-days: 14
